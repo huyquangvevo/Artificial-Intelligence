@@ -14,8 +14,8 @@ public class MainActivity extends AppCompatActivity {
 
     LinearLayout chessBoardLayout;
     Button buttonNewGame;
-    final int rowBoard = 30;
-    final int colBoard = 30;
+    static final int rowBoard = 10;
+    static final int colBoard = 10;
     final int winTotal = 5;
     static Cell[][] arrayCell ;// = new Cell[rowBoard][colBoard];
     static int[][] cellBoard; //= new int[rowBoard][colBoard];
@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
                         arrayCell[thisCell.rowCell][thisCell.columnCell].player = 1;
                         cellBoard[thisCell.rowCell][thisCell.columnCell] = 1;
 
+
                         if(checkWinner(arrayCell[thisCell.rowCell][thisCell.columnCell])){
                             buttonNewGame.setText("Chien Thang");
                         } else {
@@ -76,7 +77,9 @@ public class MainActivity extends AppCompatActivity {
                             Heuristic task = new Heuristic();
                             task.execute();
                             playerCell.add(new Cell(MainActivity.this, thisCell.rowCell, thisCell.columnCell, 1));
-                            buttonNewGame.setText("OK");
+                            buttonNewGame.setText("AI Thinking...");
+
+
                         }
                     }
                 });
@@ -98,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
 
         protected Cell doInBackground(Void... voids) {
             int maxScore = -1000;
-            int score;
+            int score = 0;
             int defenseScore;
             int attackScore = 0;
             int resultScore;
@@ -107,15 +110,18 @@ public class MainActivity extends AppCompatActivity {
             Cell resultCell = arrayCell[0][0];
             Cell resultDefense = arrayCell[0][0];
             Cell resultAttack = arrayCell[0][0];
+
             for(int i=0;i<rowBoard;i++)
                 for(int j=0;j<colBoard;j++){
                     if(arrayCell[i][j].player == 0) {
-                        score = evaluateScore(arrayCell[i][j],maxAttack);
+                       // score = evaluateScore(arrayCell[i][j],maxAttack);
+                        score = getMax(arrayCell[i][j],1,-100,100,true);
                         attackScore = score + extraScore(i,j,-1,1,1,true) + extraScore(i,j,-1,1,0,true) + extraScore(i,j,-1,1,-1,true) + extraScore(i,j,-1,0,1,true);
 
                         if(attackScore >= maxAttack){
                             resultAttack = arrayCell[i][j];
                             maxAttack = attackScore;
+                          //  resultAttack.player = -1;
                             if(flagWin)
                                 return resultAttack;
                         }
@@ -128,18 +134,41 @@ public class MainActivity extends AppCompatActivity {
                 for(int i=0;i<rowBoard;i++)
                     for(int j=0;j<colBoard;j++){
                         if(arrayCell[i][j].player  == 0){
-                            score = evaluateScore(arrayCell[i][j],maxDefense);
+                           // score = evaluateScore(arrayCell[i][j],maxDefense);
+                            score = getMax(arrayCell[i][j],1,-100,100,false);
                             defenseScore = score + extraScore(i,j,-1,1,1,false) + extraScore(i,j,-1,1,0,false) + extraScore(i,j,-1,1,-1,false) + extraScore(i,j,-1,0,1,false);
 
                             if(defenseScore >= maxDefense){
                                 resultDefense = arrayCell[i][j];
                                 maxDefense = defenseScore;
+                             //   resultDefense.player = -1;
                             }
 
 
                         }
                     }
 
+
+        /*
+            for(int i=0;i<rowBoard;i++)
+                for(int j=0;j<colBoard;j++){
+                    if(arrayCell[i][j].player == 0){
+
+                        attackScore = getMax(arrayCell[i][j],1,-100,100,true);
+                        if(attackScore >= maxAttack){
+                            resultAttack = arrayCell[i][j];
+                            maxAttack = attackScore;
+                        }
+
+                        defenseScore = getMax(arrayCell[i][j],1,-100,100,false);
+                        if(defenseScore >= maxDefense){
+                            resultDefense = arrayCell[i][j];
+                            maxDefense = defenseScore;
+                        }
+
+                    }
+                }
+        */
             resultCell.player = maxScore;
          //   return flagChoosen ? resultAttack : resultDefense;
             return amountDefense>=amountAttack ? resultDefense : resultAttack;
@@ -147,16 +176,20 @@ public class MainActivity extends AppCompatActivity {
 
         protected void onPostExecute(Cell c){
 
+
+
             arrayCell[c.rowCell][c.columnCell].player = -1;
             cellBoard[c.rowCell][c.columnCell] = -1;
 
-            machinceCell.add(arrayCell[c.rowCell][c.columnCell]);
+          //  machinceCell.add(arrayCell[c.rowCell][c.columnCell]);
             arrayCell[c.rowCell][c.columnCell].setText("O");
-            arrayCell[c.rowCell][c.columnCell].setTextColor(Color.GREEN);
+            arrayCell[c.rowCell][c.columnCell].setTextColor(Color.BLACK);
             preCell = arrayCell[c.rowCell][c.columnCell];
-            buttonNewGame.setText(c.player+" Ok");
+            buttonNewGame.setText(c.player+" Ok Huy");
             if(checkWinner(arrayCell[c.rowCell][c.columnCell]))
                 buttonNewGame.setText("May Thang");
+
+
 
         }
 
@@ -430,6 +463,8 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 } else if(cellBoard[indexRow][indexCol] == 0 && flagAttack){
                     if (indexRow + indexRowTarget < 0 || indexCol + indexColTarget < 0 || indexRow + indexRowTarget >= rowBoard || indexCol + indexColTarget >= colBoard)
+                        break;
+                    else
                         if(cellBoard[indexRow+indexRowTarget][indexCol+indexColTarget] == playerTarget){
                             indexRow += indexRowTarget;
                             indexCol += indexColTarget;
@@ -499,6 +534,8 @@ public class MainActivity extends AppCompatActivity {
 
                 } else if(cellBoard[indexRow][indexCol] == 0 && flagAttack){
                     if (indexRow - indexRowTarget < 0 || indexCol - indexColTarget < 0 || indexRow - indexRowTarget >= rowBoard || indexCol - indexColTarget >= colBoard)
+                        break;
+                    else
                         if(cellBoard[indexRow-indexRowTarget][indexCol-indexColTarget] == playerTarget){
                             indexRow -= indexRowTarget;
                             indexCol -= indexColTarget;
@@ -578,6 +615,163 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
+    public int getMaxScore(Cell cell,int preMax,int level){
+        int sumScore = 0;
+        int minScore = 100;
+        int maxScore = 0;
+        int score = 0;
+        cellBoard[cell.rowCell][cell.columnCell] = -1;
+            for(int i=0;i<rowBoard;i++)
+                for(int j=0;j<colBoard;j++){
+                    if(cellBoard[i][j] == 0)
+                        score = evaluateScore(arrayCell[i][j],preMax);
+                        if(score>=maxScore)
+                            maxScore = score;
+
+                    }
+
+                return maxScore;
+        }
+
+
+    public int getEntropy(Cell cell,int player,boolean flagAtt){
+
+        int sumScore = 0;
+        player = -player;
+      //  int minScore = 100;
+      //  cellBoard[cell.rowCell][cell.columnCell] = player;
+        for(int k=0;k<rowBoard;k++) {
+            for (int p = 0; p < colBoard; p++) {
+
+               if(cellBoard[k][p] == -player)
+                   sumScore += calculateScore(k,p,-player,1,1) + calculateScore(k,p,-player,1,0)
+                           + calculateScore(k,p,-player,1,-1) + calculateScore(k,p,-player,0,1);
+               if(cellBoard[k][p] == player)
+                   sumScore = sumScore - calculateScore(k,p,player,1,1) - calculateScore(k,p,player,1,0)
+                           - calculateScore(k,p,player,1,-1) - calculateScore(k,p,player,0,1);
+
+               // int scorePlus = extraScore(k,p,-1,1,1,flagAtt) + extraScore(k,p,-1,1,0,flagAtt) + extraScore(k,p,-1,1,-1,flagAtt) + extraScore(k,p,-1,0,1,flagAtt);
+
+
+            }
+        }
+
+        // cellBoard[cell.rowCell][cell.columnCell] = 0;
+      /*  for(int k=0;k < machinceCell.size();k++){
+            Cell c = machinceCell.get(k);
+            sumScore += calculateScore(c.rowCell, c.columnCell, 1, 1, 1) + calculateScore(c.rowCell, c.columnCell, 1, 1, 0)
+                    + calculateScore(c.rowCell, c.columnCell, 1, 1, -1) + calculateScore(c.rowCell, c.columnCell, 1, 0, 1);
+
+        }
+
+        for (int p = 0; p < playerCell.size(); p++) {
+            Cell c = playerCell.get(p);
+            sumScore = sumScore - calculateScore(c.rowCell, c.columnCell, -1, 1, 1) - calculateScore(c.rowCell, c.columnCell, -1, 1, 0)
+                    - calculateScore(c.rowCell, c.columnCell, -1, 1, -1) - calculateScore(c.rowCell, c.columnCell, -1, 0, 1);
+        }
+        */
+        return sumScore;
+
+
+
+    }
+
+    public int getMax(Cell cell,int level,int preMAX,int preMIN,boolean flagAttack){
+        int result = 0;
+
+        if(level == 3){
+            int scoreCache = 0;
+            int minScore = -1000;
+            cellBoard[cell.rowCell][cell.columnCell] = -1;
+            for(int i=0;i<rowBoard;i++)
+                for (int j=0;j<colBoard;j++)
+                    if(cellBoard[i][j] == 0){
+                        cellBoard[i][j] = 1;
+                        scoreCache = getEntropy(arrayCell[i][j],-1,flagAttack);
+                   //     scoreCache -= extraScore(i,j,-1,1,1,flagAttack) + extraScore(i,j,-1,1,0,flagAttack) + extraScore(i,j,-1,1,-1,flagAttack) + extraScore(i,j,-1,0,1,flagAttack);
+                        cellBoard[i][j] = 0;
+                        if(scoreCache<=minScore){
+                            minScore = scoreCache;
+                           // preMAX = minScore;
+                        }
+                        if(minScore<preMAX){
+                            cellBoard[cell.rowCell][cell.columnCell] = 0;
+                            return minScore;
+                        }
+                    }
+
+            cellBoard[cell.rowCell][cell.columnCell] = 0;
+            result = minScore;
+          //  return  minScore;
+        }
+
+        if(level == 2 ){
+            int maxScore = -1000;
+            int scoreCache = 0;
+            cellBoard[cell.rowCell][cell.columnCell] = 1;
+            for(int i=0;i<rowBoard;i++)
+                for (int j=0;j<colBoard;j++){
+                    if(cellBoard[i][j] == 0){
+                      // cellBoard[i][j] = 1;
+                        scoreCache = getMax(arrayCell[i][j],level +1,preMAX,preMIN,flagAttack);
+                     //   scoreCache += extraScore(i,j,-1,1,1,flagAttack) + extraScore(i,j,-1,1,0,flagAttack) + extraScore(i,j,-1,1,-1,flagAttack) + extraScore(i,j,-1,0,1,flagAttack);
+
+                        // scoreCache = getEntropy(arrayCell[i][j],-1,-1000);
+                       // cellBoard[i][j] = 0;
+                        if(scoreCache>=maxScore){
+                            maxScore = scoreCache;
+                            preMAX = maxScore;
+                        }
+                        if(maxScore>preMIN){
+                            cellBoard[cell.rowCell][cell.columnCell] = 0;
+                            return maxScore;
+                        }
+                    }
+                }
+
+                cellBoard[cell.rowCell][cell.columnCell] = 0;
+            result = maxScore;
+             //   return maxScore;
+        }
+
+        if(level == 1 ){
+
+
+            int minScore = 1000;
+            int scoreCache = 0;
+
+            cellBoard[cell.rowCell][cell.columnCell] = -1;
+            for(int i=0;i<rowBoard;i++)
+                for (int j=0;j<colBoard;j++){
+                    if(cellBoard[i][j] == 0){
+                      //  cellBoard[i][j] = 1;
+                        scoreCache = getMax(arrayCell[i][j],level+1,preMAX,preMIN,flagAttack);
+                     //   scoreCache -= extraScore(i,j,-1,1,1,flagAttack) + extraScore(i,j,-1,1,0,flagAttack) + extraScore(i,j,-1,1,-1,flagAttack) + extraScore(i,j,-1,0,1,flagAttack);
+                        //   cellBoard[i][j] = 0;
+                        if(scoreCache<=minScore){
+                            minScore = scoreCache;
+                            preMIN = minScore;
+                        }
+                        if(minScore<preMAX){
+                            cellBoard[cell.rowCell][cell.columnCell] = 0;
+                            return minScore;
+                        }
+                    }
+                }
+
+            result = minScore;
+            cellBoard[cell.rowCell][cell.columnCell] = 0;
+          //  return minScore;
+        }
+
+        return result;
+      //  return 0;
+    }
+
+
+
+
 
 
 }
