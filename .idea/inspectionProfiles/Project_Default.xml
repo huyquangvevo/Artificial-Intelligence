@@ -1,6 +1,14 @@
+<<<<<<< HEAD
 <component name="InspectionProjectProfileManager">
   <profile version="1.0">
     <option name="myName" value="Project Default" />
     <inspection_tool class="AndroidLintMissingSuperCall" enabled="false" level="ERROR" enabled_by_default="false" />
   </profile>
+=======
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="AndroidLintMissingSuperCall" enabled="false" level="ERROR" enabled_by_default="false" />
+  </profile>
+>>>>>>> 430d2d1f3d9e2ccb9b393e40fff6384e04eaa07e
 </component>
